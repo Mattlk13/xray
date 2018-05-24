@@ -44,6 +44,7 @@ pub enum Error {
 }
 
 pub struct Buffer {
+    id: BufferId,
     pub replica_id: ReplicaId,
     next_replica_id: Option<ReplicaId>,
     local_clock: LocalTimestamp,
@@ -394,6 +395,7 @@ pub mod rpc {
         fn init(&mut self, _: &rpc::server::Connection) -> Self::State {
             let buffer = self.buffer.borrow_mut();
             let mut state = State {
+                id: buffer.id,
                 replica_id: self.replica_id,
                 fragments: Vec::new(),
                 insertions: HashMap::new(),
@@ -504,7 +506,7 @@ pub mod rpc {
 }
 
 impl Buffer {
-    pub fn new() -> Self {
+    pub fn new(id: BufferId) -> Self {
         let mut fragments = Tree::new();
 
         // Push start sentinel.
@@ -536,6 +538,7 @@ impl Buffer {
         );
 
         Self {
+            id,
             replica_id: 1,
             next_replica_id: Some(2),
             local_clock: 0,
@@ -595,6 +598,7 @@ impl Buffer {
         }
 
         let buffer = Buffer {
+            id: state.id,
             replica_id: state.replica_id,
             next_replica_id: None,
             local_clock: 0,
@@ -642,6 +646,10 @@ impl Buffer {
             .unwrap();
 
         Ok(buffer)
+    }
+
+    pub fn id(&self) -> BufferId {
+        self.id
     }
 
     pub fn next_replica_id(&mut self) -> Result<ReplicaId, ()> {
